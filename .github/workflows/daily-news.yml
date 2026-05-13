@@ -1,0 +1,55 @@
+name: 📰 Daily News Digest
+
+on:
+  # ── Scheduled: Runs Daily at 7:00 AM IST (1:30 UTC) ──
+  schedule:
+    - cron: '30 1 * * *'      # 7:00 AM IST
+
+  # ── Manual Trigger: Can also run from GitHub UI ──
+  workflow_dispatch:
+    inputs:
+      send_test:
+        description: 'Send a test message immediately'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  send-daily-news:
+    name: Fetch & Send News Digest
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'  # Caches pip dependencies for faster runs
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 📡 Fetch news & send to Telegram
+        run: |
+          if [ "${{ github.event.inputs.send_test }}" = "true" ]; then
+            python news_fetcher.py --test
+          else
+            python news_fetcher.py
+          fi
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      - name: 💾 Upload news digest as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: news-digest-${{ github.run_id }}
+          path: news_digest_*.md
+          retention-days: 3
+          if-no-files-found: ignore
