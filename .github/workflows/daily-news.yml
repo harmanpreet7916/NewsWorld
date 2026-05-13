@@ -5,14 +5,8 @@ on:
   schedule:
     - cron: '30 1 * * *'      # 7:00 AM IST
 
-  # ── Manual Trigger: Can also run from GitHub UI ──
+  # ── Manual Trigger: Run immediately from GitHub UI ──
   workflow_dispatch:
-    inputs:
-      send_test:
-        description: 'Send a test message immediately'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   send-daily-news:
@@ -36,12 +30,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: 📡 Fetch news & send to Telegram
-        run: |
-          if [ "${{ github.event.inputs.send_test }}" = "true" ]; then
-            python news_fetcher.py --test
-          else
-            python news_fetcher.py
-          fi
+        run: python news_fetcher.py
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
