@@ -203,7 +203,10 @@ def fetch_feed(url: str, timeout: int = 15) -> list:
 
 def fetch_all_feeds() -> dict:
     """Fetch all RSS feeds and categorize articles."""
-    categorized = {cat: [] for cat in config.RSS_FEEDS}
+    # Initialize ALL possible categories (from CATEGORY_KEYWORDS) to handle
+    # cases where RSS_FEEDS doesn't include a category like "other"
+    all_possible_categories = set(config.CATEGORY_KEYWORDS.keys()) | set(config.RSS_FEEDS.keys())
+    categorized = {cat: [] for cat in all_possible_categories}
     all_articles = []
     seen_ids = set()
 
@@ -230,7 +233,8 @@ def fetch_all_feeds() -> dict:
                     "source": article["source"],
                 }
 
-                categorized[assigned_category].append(article_entry)
+                # Use setdefault to handle any unexpected category gracefully
+                categorized.setdefault(assigned_category, []).append(article_entry)
                 all_articles.append(article_entry)
 
     log.info(f"✅ Collected {len(all_articles)} unique articles total")
